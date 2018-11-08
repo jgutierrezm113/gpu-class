@@ -89,7 +89,7 @@ int main( int argc, const char** argv ) {
     
     cout << "CPU execution time: " << finish_cpu - start_cpu << " ms" << endl;
     cout << "GPU execution time: " << finish_gpu - start_gpu << " ms" << endl;
-    cout << "Percentage difference: " << wrong_pixels*100.0/(height*width) << "%\n";
+    cout << "Percentage difference: " << wrong_pixels*100.0/(height*width) << " %\n";
             
     // Create windows
     //namedWindow("Original Image", WINDOW_NORMAL );
