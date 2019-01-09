@@ -27,7 +27,7 @@ input_data=( \
     )
 
 #unkown image
-unknown_image="input/low-contrast.jpg"
+unknown_image="input/img.jpg"
 
 #get folder recollection
 MYPWD=${PWD}

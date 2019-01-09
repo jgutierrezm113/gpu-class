@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:k20:1
 #SBATCH --output=exec.%j.out
 
-cd /scratch/$USER/GPUClass18/HOL3/
+cd /scratch/$USER/GPUClass18/HOL2/
 
 set -o xtrace
-./stencil 1000000
+./vadd 100000000
