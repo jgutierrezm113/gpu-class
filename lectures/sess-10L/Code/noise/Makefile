@@ -18,33 +18,36 @@ opencvINC= -I/shared/apps/opencv-3.0.0-beta/INSTALL/include
 GENCODE_FLAGS := -gencode arch=compute_$(SM),code=sm_$(SM)
 LIB_FLAGS := -lcudadevrt -lcudart
 
-NVCCFLAGS := -O3
+NVCCFLAGS :=
 GccFLAGS = -fopenmp -O3 
 
 OPENCV_LINK =  -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_photo -lopencv_video -lopencv_imgcodecs 
 
 debug: GccFLAGS += -DDEBUG -g -Wall
-debug: NVCCFLAGS = -g -G
+debug: NVCCFLAGS += -g -G
 debug: all
 
 # The build target executable:
-TARGET = sobel
+TARGETS = noise_remover measure_noise
 
 all: build
 
-build: $(TARGET)
+build: $(TARGETS)
 
-$(TARGET): src/dlink.o src/main.o src/$(TARGET).o
+noise_remover: src/dlink.o src/main.o src/noise_remover.o
 	$(NVCC) $(NVCCFLAGS) $(opencvLIB) $(opencvINC) $^ -o $@ $(GENCODE_FLAGS) $(OPENCV_LINK) -link 
 
-src/dlink.o: src/$(TARGET).o 
+src/dlink.o: src/noise_remover.o 
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(GENCODE_FLAGS) -dlink
 
 src/main.o: src/main.cpp
 	$(GCC) $(GccFLAGS) $(opencvLIB) $(opencvINC) -c $< -o $@
 	
-src/$(TARGET).o: src/$(TARGET).cu
+src/noise_remover.o: src/noise_remover.cu
 	$(NVCC) $(NVCCFLAGS) -dc $< -o $@ $(GENCODE_FLAGS) 
-	
+
+%: src/%.cpp
+	$(GCC) $(GccFLAGS) $(opencvLIB) $(opencvINC) $< -o $@ $(OPENCV_LINK)
+    
 clean:
-	$(RM) $(TARGET) src/*.o *.o *.tar* *.core* *out*.jpg *input*.jpg
+	$(RM) noise_remover measure_noise src/*.o *.o *.tar* *.core* *out*.jpg *input*.jpg

@@ -1,40 +1,30 @@
 # environment
 SM := 35
 
-# compilers
-CUDA_PATH ?= $(shell test -d /shared/centos7/cuda/9.0 && echo /shared/centos7/cuda/9.0)
-
-ifeq ($(CUDA_PATH),)
-CUDA_PATH := $(shell test -d /usr/local/cuda-7.0 && echo /usr/local/cuda-7.0)
-endif 
-
 GCC := g++
-NVCC := nvcc #$(CUDA_PATH)/bin/nvcc
-
-# libraries
-CUDA_LIB_PATH := $(CUDA_PATH)/lib
+NVCC := nvcc
 
 # Remove function
 RM = rm -f
  
+# Specify opencv Installation
+#opencvLocation = /usr/local/opencv
+opencvLIB= -L/shared/apps/opencv-3.0.0-beta/INSTALL/lib
+opencvINC= -I/shared/apps/opencv-3.0.0-beta/INSTALL/include
+
 # Compiler flags:
 # -g    debugging information
 # -Wall turns on most compiler warnings
 GENCODE_FLAGS := -gencode arch=compute_$(SM),code=sm_$(SM)
 LIB_FLAGS := -lcudadevrt -lcudart
-ifeq ($(OS), DARWIN)
-	CCFLAGS := -stdlib=libstdc++
-else
-	CCFLAGS := -O3
-endif
+
 NVCCFLAGS := -O3
-NVCCPOSTFLAGS := 
 GccFLAGS = -fopenmp -O3 
-MPIFLAGS = -Wno-deprecated
+
+OPENCV_LINK =  -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_photo -lopencv_video -lopencv_imgcodecs 
 
 debug: GccFLAGS += -DDEBUG -g -Wall
-debug: MPIFLAGS += -DDEBUG
-debug: NVCCFLAGS += -g -G
+debug: NVCCFLAGS = -g -G
 debug: all
 
 # The build target executable:
@@ -44,23 +34,17 @@ all: build
 
 build: $(TARGET)
 
-$(TARGET): lib/dlink.o lib/main.o lib/alg/$(TARGET).o lib/img/imghandler.o lib/alg/locationhandler.o
-	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(GENCODE_FLAGS) -link
+$(TARGET): src/dlink.o src/main.o src/$(TARGET).o
+	$(NVCC) $(NVCCFLAGS) $(opencvLIB) $(opencvINC) $^ -o $@ $(GENCODE_FLAGS) $(OPENCV_LINK) -link 
 
-lib/dlink.o: lib/alg/$(TARGET).o 
+src/dlink.o: src/$(TARGET).o 
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(GENCODE_FLAGS) -dlink
 
-lib/main.o: lib/main.cpp lib/config.h
-	$(GCC) $(GccFLAGS) -c $< -o $@
-
-lib/alg/locationhandler.o: lib/alg/locationhandler.cpp lib/alg/locationhandler.h lib/config.h
-	$(GCC) $(GccFLAGS) -c $< -o $@
+src/main.o: src/main.cpp
+	$(GCC) $(GccFLAGS) $(opencvLIB) $(opencvINC) -c $< -o $@
 	
-lib/alg/$(TARGET).o: lib/alg/$(TARGET).cu lib/config.h
-	$(NVCC) $(NVCCFLAGS) -dc $< -o $@ $(GENCODE_FLAGS) $(NVCCPOSTFLAGS)
-
-lib/img/imghandler.o: lib/img/imghandler.cpp lib/config.h
-	$(GCC) $(GccFLAGS) -c $< -o $@
+src/$(TARGET).o: src/$(TARGET).cu
+	$(NVCC) $(NVCCFLAGS) -dc $< -o $@ $(GENCODE_FLAGS) 
 	
 clean:
-	$(RM) $(TARGET) *.o lib/*.o lib/*/*.o *.tar* *.core*
+	$(RM) $(TARGET) src/*.o *.o *.tar* *.core* *out*.jpg *input*.jpg

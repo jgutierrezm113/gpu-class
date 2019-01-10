@@ -12,8 +12,8 @@
 cd /scratch/$USER/GPUClass18/HOL5/brightness/
 
 set -o xtrace
-nvprof ./brightness --image ../input/fractal.pgm
+nvprof ./brightness ../input/fractal.pgm 100
 echo "METRICS"
-nvprof -m all  ./brightness --image ../input/fractal.pgm
+nvprof -m all  ./brightness ../input/fractal.pgm 100
 
 

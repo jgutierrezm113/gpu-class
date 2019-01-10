@@ -1,28 +1,29 @@
 # environment
 SM := 35
 
-# compilers
-CUDA_PATH := /shared/centos7/cuda/9.0
-
 GCC := g++
-NVCC := $(CUDA_PATH)/bin/nvcc
-
-# libraries
-CUDA_LIB_PATH := $(CUDA_PATH)/lib
+NVCC := nvcc
 
 # Remove function
 RM = rm -f
  
+# Specify opencv Installation
+#opencvLocation = /usr/local/opencv
+opencvLIB= -L/shared/apps/opencv-3.0.0-beta/INSTALL/lib
+opencvINC= -I/shared/apps/opencv-3.0.0-beta/INSTALL/include
+
 # Compiler flags:
 # -g    debugging information
 # -Wall turns on most compiler warnings
 GENCODE_FLAGS := -gencode arch=compute_$(SM),code=sm_$(SM)
 LIB_FLAGS := -lcudadevrt -lcudart
+
 NVCCFLAGS :=
-GccFLAGS = -fopenmp -std=c++11 -O3
+GccFLAGS = -fopenmp -O3 
+
+OPENCV_LINK =  -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_photo -lopencv_video -lopencv_imgcodecs 
 
 debug: GccFLAGS += -DDEBUG -g -Wall
-debug: MPIFLAGS += -DDEBUG
 debug: NVCCFLAGS += -g -G
 debug: all
 
@@ -33,23 +34,17 @@ all: build
 
 build: $(TARGET)
 
-$(TARGET): lib/dlink.o lib/main.o lib/alg/$(TARGET).o lib/img/imghandler.o lib/alg/locationhandler.o
-	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(GENCODE_FLAGS) -link
+$(TARGET): src/dlink.o src/main.o src/$(TARGET).o
+	$(NVCC) $(NVCCFLAGS) $(opencvLIB) $(opencvINC) $^ -o $@ $(GENCODE_FLAGS) $(OPENCV_LINK) -link 
 
-lib/dlink.o: lib/alg/$(TARGET).o 
+src/dlink.o: src/$(TARGET).o 
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(GENCODE_FLAGS) -dlink
 
-lib/main.o: lib/main.cpp lib/config.h
-	$(GCC) $(GccFLAGS) -c $< -o $@
-
-lib/alg/locationhandler.o: lib/alg/locationhandler.cpp lib/alg/locationhandler.h lib/config.h
-	$(GCC) $(GccFLAGS) -c $< -o $@
+src/main.o: src/main.cpp
+	$(GCC) $(GccFLAGS) $(opencvLIB) $(opencvINC) -c $< -o $@
 	
-lib/alg/$(TARGET).o: lib/alg/$(TARGET).cu lib/config.h
+src/$(TARGET).o: src/$(TARGET).cu
 	$(NVCC) $(NVCCFLAGS) -dc $< -o $@ $(GENCODE_FLAGS) 
-
-lib/img/imghandler.o: lib/img/imghandler.cpp lib/config.h
-	$(GCC) $(GccFLAGS) -c $< -o $@
 	
 clean:
-	$(RM) $(TARGET) *.o lib/*.o *.tar* *.core* lib/*/*.o
+	$(RM) $(TARGET) src/*.o *.o *.tar* *.core* *out*.jpg *input*.jpg

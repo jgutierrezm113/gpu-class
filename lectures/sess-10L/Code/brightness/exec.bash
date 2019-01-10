@@ -9,9 +9,9 @@
 #SBATCH --gres=gpu:k20:1
 #SBATCH --output=nvprof.%j.out
 
-cd /scratch/$USER/GPUClass18/HOL5/brightness/
+cd /scratch/$USER/GPUClass19/HOL5/brightness/
 
 set -o xtrace
-./brightness --image ../input/fractal.pgm
-./brightness --image ../input/world.pgm
+./brightness ../input/fractal.pgm 100
+./brightness ../input/world.pgm 100
 
