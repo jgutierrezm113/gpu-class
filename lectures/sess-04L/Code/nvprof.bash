@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:k20:1
 #SBATCH --output=nvprof.%j.out
 
-cd /scratch/`whoami`/GPUClass18/HOL1/
+cd /scratch/`whoami`/GPUClassS19/HOL2/
 
 set -o xtrace
 echo "NORMAL RUN"
