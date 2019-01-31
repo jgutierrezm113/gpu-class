@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:k20:1
 #SBATCH --output=mem.%j.out
 
-cd /scratch/$USER/GPUClass18/HOL2/
+cd /scratch/$USER/GPUClassS19/HOL3/
 
 set -o xtrace
 cuda-memcheck ./vadd_coalesced 1000000
