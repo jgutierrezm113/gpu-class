@@ -3,17 +3,17 @@
 #include <stdlib.h>
 #include <cuda.h>
 #include <time.h>
+ 
+#include "config.h"
 
 #define TIMER_CREATE(t)               \
   cudaEvent_t t##_start, t##_end;     \
   cudaEventCreate(&t##_start);        \
   cudaEventCreate(&t##_end);               
  
- 
 #define TIMER_START(t)                \
   cudaEventRecord(t##_start);         \
   cudaEventSynchronize(t##_start);    \
- 
  
 #define TIMER_END(t)                             \
   cudaEventRecord(t##_end);                      \
@@ -21,19 +21,6 @@
   cudaEventElapsedTime(&t, t##_start, t##_end);  \
   cudaEventDestroy(t##_start);                   \
   cudaEventDestroy(t##_end);     
-  
-#define TILE_SIZE 16
-#define CUDA_TIMING
-#define DEBUG
-
-unsigned char *input_gpu;
-unsigned char *output_gpu;
-
-double CLOCK() {
-	struct timespec t;
-	clock_gettime(CLOCK_MONOTONIC,  &t);
-	return (t.tv_sec * 1000)+(t.tv_nsec*1e-6);
-}
 
 /*******************************************************/
 /*                 Cuda Error Function                 */
@@ -51,27 +38,45 @@ inline cudaError_t checkCuda(cudaError_t result) {
 // Add GPU kernel and functions
 // HERE!!!
 __global__ void kernel(unsigned char *input, 
-                       unsigned char *output){
+                       unsigned char *output,
+                       unsigned int width,
+                       unsigned int height){
 
     int x = blockIdx.x*TILE_SIZE+threadIdx.x;
     int y = blockIdx.y*TILE_SIZE+threadIdx.y;
 
     int location = 	y*TILE_SIZE*gridDim.x+x;
+    
     output[location] = x%255;
 
 }
 
-void histogram_gpu(unsigned char *data, 
-                   unsigned int height, 
-                   unsigned int width){
+__global__ void warmup(unsigned char *input, 
+                       unsigned char *output){
+
+	int x = blockIdx.x*TILE_SIZE+threadIdx.x;
+	int y = blockIdx.y*TILE_SIZE+threadIdx.y;
+	  
+	int location = 	y*(gridDim.x*TILE_SIZE)+x;
+	
+    output[location] = 0;
+
+}
+
+// NOTE: The data passed on is already padded
+void gpu_function(unsigned char *data,  
+                  unsigned int height, 
+                  unsigned int width){
     
+    unsigned char *input_gpu;
+    unsigned char *output_gpu;
+
 	int gridXSize = 1 + (( width - 1) / TILE_SIZE);
 	int gridYSize = 1 + ((height - 1) / TILE_SIZE);
 	
 	int XSize = gridXSize*TILE_SIZE;
 	int YSize = gridYSize*TILE_SIZE;
 	
-	// Both are the same size (CPU/GPU).
 	int size = XSize*YSize;
 	
 	// Allocate arrays in GPU memory
@@ -94,18 +99,23 @@ void histogram_gpu(unsigned char *data,
     dim3 dimBlock(TILE_SIZE, TILE_SIZE);
 
 	// Kernel Call
-	#if defined(CUDA_TIMING)
+	#ifdef CUDA_TIMING
 		float Ktime;
 		TIMER_CREATE(Ktime);
 		TIMER_START(Ktime);
 	#endif
         
+        // Add more kernels and functions as needed here
         kernel<<<dimGrid, dimBlock>>>(input_gpu, 
-                                      output_gpu);
+                                      output_gpu,
+                                      width,
+                                      height);
+        
+        // From here on, no need to change anything
         checkCuda(cudaPeekAtLastError());                                     
         checkCuda(cudaDeviceSynchronize());
 	
-	#if defined(CUDA_TIMING)
+	#ifdef CUDA_TIMING
 		TIMER_END(Ktime);
 		printf("Kernel Execution Time: %f ms\n", Ktime);
 	#endif
@@ -122,10 +132,13 @@ void histogram_gpu(unsigned char *data,
 
 }
 
-void histogram_gpu_warmup(unsigned char *data, 
-                   unsigned int height, 
-                   unsigned int width){
-                         
+void gpu_warmup(unsigned char *data, 
+                unsigned int height, 
+                unsigned int width){
+    
+    unsigned char *input_gpu;
+    unsigned char *output_gpu;
+     
 	int gridXSize = 1 + (( width - 1) / TILE_SIZE);
 	int gridYSize = 1 + ((height - 1) / TILE_SIZE);
 	
@@ -154,7 +167,7 @@ void histogram_gpu_warmup(unsigned char *data,
 	dim3 dimGrid(gridXSize, gridYSize);
     dim3 dimBlock(TILE_SIZE, TILE_SIZE);
     
-    kernel<<<dimGrid, dimBlock>>>(input_gpu, 
+    warmup<<<dimGrid, dimBlock>>>(input_gpu, 
                                   output_gpu);
                                          
     checkCuda(cudaDeviceSynchronize());

@@ -59,7 +59,7 @@ int main( int argc, const char** argv ) {
     cout << "Image size: " << height << "x" << width << endl;
     
     // Construct padded image
-    Mat padded;
+    /*Mat padded;
     
     int gridXSize = 1 + (( width - 1) / TILE_SIZE);
 	int gridYSize = 1 + ((height - 1) / TILE_SIZE);
@@ -71,6 +71,9 @@ int main( int argc, const char** argv ) {
     padded.setTo(cv::Scalar::all(0));
 
     input_image.copyTo(padded(Rect(0, 0, input_image.cols, input_image.rows)));
+    */
+    Mat padded;
+    input_image.copyTo(padded);
     
     ///////////////////////
     // START CPU Processing

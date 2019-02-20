@@ -32,8 +32,8 @@ int main(int argc, char** argv) {
     Mat mean, stddev;
     meanStdDev(input_image, mean, stddev);
     
-    cout << "The estimate of the average noise is: " << stddev.at<double>(0,0) << endl;
-    cout << "The estimate of the average value is: " << mean.at<double>(0,0) << endl;
+    cout << "The average noise (stddev) is: " << stddev.at<double>(0,0) << endl;
+    //cout << "The average value is: " << mean.at<double>(0,0) << endl;
 
     return 0;
 }

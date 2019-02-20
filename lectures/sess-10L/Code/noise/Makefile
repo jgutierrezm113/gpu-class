@@ -28,22 +28,22 @@ debug: NVCCFLAGS += -g -G
 debug: all
 
 # The build target executable:
-TARGETS = noise_remover measure_noise
+TARGETS = denoise measure_noise
 
 all: build
 
 build: $(TARGETS)
 
-noise_remover: src/dlink.o src/main.o src/noise_remover.o
+denoise: src/dlink.o src/main.o src/denoise.o
 	$(NVCC) $(NVCCFLAGS) $(opencvLIB) $(opencvINC) $^ -o $@ $(GENCODE_FLAGS) $(OPENCV_LINK) -link 
 
-src/dlink.o: src/noise_remover.o 
+src/dlink.o: src/denoise.o 
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(GENCODE_FLAGS) -dlink
 
 src/main.o: src/main.cpp
 	$(GCC) $(GccFLAGS) $(opencvLIB) $(opencvINC) -c $< -o $@
 	
-src/noise_remover.o: src/noise_remover.cu
+src/denoise.o: src/denoise.cu
 	$(NVCC) $(NVCCFLAGS) -dc $< -o $@ $(GENCODE_FLAGS) 
 
 %: src/%.cpp

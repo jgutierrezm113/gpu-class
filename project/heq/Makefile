@@ -18,13 +18,13 @@ opencvINC= -I/shared/apps/opencv-3.0.0-beta/INSTALL/include
 GENCODE_FLAGS := -gencode arch=compute_$(SM),code=sm_$(SM)
 LIB_FLAGS := -lcudadevrt -lcudart
 
-NVCCFLAGS :=
+NVCCFLAGS := -O3
 GccFLAGS = -fopenmp -O3 
 
 OPENCV_LINK =  -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_photo -lopencv_video -lopencv_imgcodecs 
 
 debug: GccFLAGS += -DDEBUG -g -Wall
-debug: NVCCFLAGS += -g -G
+debug: NVCCFLAGS = -g -G
 debug: all
 
 # The build target executable:

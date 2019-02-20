@@ -44,15 +44,15 @@ inline cudaError_t checkCuda(cudaError_t result) {
 
 __global__ void kernel(unsigned char *input, 
                        unsigned char *output,
-                       unsigned int size_x,
-                       unsigned int size_y,
+                       unsigned int height, 
+                       unsigned int width,
                        int threshold){
 
     const unsigned int x = blockIdx.x*TILE_SIZE+threadIdx.x;
     const unsigned int y = blockIdx.y*TILE_SIZE+threadIdx.y;
     
     // Skip this thread if outside the size
-    if (x >= size_x-1 || y >= size_y-1)
+    if (x >= width-1 || y >= height-1)
         return;
 
     const unsigned int location= y*TILE_SIZE*gridDim.x+x;
@@ -71,7 +71,9 @@ __global__ void kernel(unsigned char *input,
 
     unsigned int sum[2] ={0};
 
+    #pragma unroll
     for (unsigned int i = 0 ; i < 3 ; ++i){
+        #pragma unroll
         for (unsigned int j = 0 ; j < 3 ; ++j){
             const int x_elem = i+x-1;
             const int y_elem = j+y-1;
@@ -90,6 +92,8 @@ __global__ void kernel(unsigned char *input,
 }
 
 __global__ void warmup(unsigned char *input, 
+                       unsigned int height, 
+                       unsigned int width,
                        unsigned char *output){
 
 	// Read Input Data
@@ -98,6 +102,8 @@ __global__ void warmup(unsigned char *input,
 	int x = blockIdx.x*TILE_SIZE+threadIdx.x;
 	int y = blockIdx.y*TILE_SIZE+threadIdx.y;
 	  
+    if (x >= width || y >= height) return;
+    
 	int location = 	y*(gridDim.x*TILE_SIZE)+x;
 			
 	unsigned char value = 0;
@@ -114,11 +120,8 @@ void gpu_function (unsigned char *data,
 	int gridXSize = 1 + (( width - 1) / TILE_SIZE);
 	int gridYSize = 1 + ((height - 1) / TILE_SIZE);
 	
-	int XSize = gridXSize*TILE_SIZE;
-	int YSize = gridYSize*TILE_SIZE;
-	
 	// Both are the same size (CPU/GPU).
-	int size = XSize*YSize;
+	int size = height*width;//XSize*YSize;
 	
 	// Allocate arrays in GPU memory
 	checkCuda(cudaMalloc((void**)&input_gpu   , size*sizeof(unsigned char)));
@@ -161,8 +164,8 @@ void gpu_function (unsigned char *data,
         
         kernel<<<dimGrid, dimBlock>>>(input_gpu, 
                                       output_gpu,
-                                      width,
                                       height,
+                                      width,
                                       threshold);
                                       
         checkCuda(cudaPeekAtLastError());                                     
@@ -192,11 +195,8 @@ void gpu_warmup   (unsigned char *data,
         int gridXSize = 1 + (( width - 1) / TILE_SIZE);
         int gridYSize = 1 + ((height - 1) / TILE_SIZE);
         
-        int XSize = gridXSize*TILE_SIZE;
-        int YSize = gridYSize*TILE_SIZE;
-        
         // Both are the same size (CPU/GPU).
-        int size = XSize*YSize;
+        int size = height*width;//XSize*YSize;
         
         // Allocate arrays in GPU memory
         checkCuda(cudaMalloc((void**)&input_gpu   , size*sizeof(unsigned char)));
@@ -218,6 +218,8 @@ void gpu_warmup   (unsigned char *data,
         dim3 dimBlock(TILE_SIZE, TILE_SIZE);
         
         warmup<<<dimGrid, dimBlock>>>(input_gpu, 
+                                      height,
+                                      width,
                                       output_gpu);
                                              
         checkCuda(cudaDeviceSynchronize());
