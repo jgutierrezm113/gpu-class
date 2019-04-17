@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:k20:1
 #SBATCH --output=nvprof.%j.out
 
-cd /scratch/$USER/GPUClass18/HOL4/pinned/
+cd /scratch/$USER/GPUClassS19/HOL6/pinned/
 
 set -o xtrace
 nvprof ./vadd 100000000 

@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:k20:1
 #SBATCH --output=exec.%j.out
 
-cd /scratch/$USER/GPUClass18/HOL4/dp/
+cd /scratch/$USER/GPUClassS19/HOL6/dp/
 
 set -o xtrace
 ./baseline 100 3000
